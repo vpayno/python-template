@@ -11,5 +11,6 @@
  [![yaml](https://github.com/vpayno/python-template/actions/workflows/yaml.yaml/badge.svg?branch=main)](https://github.com/vpayno/python-template/actions/workflows/yaml.yaml)]
 
  [![python](https://github.com/vpayno/python-template/actions/workflows/python.yaml/badge.svg?branch=main)](https://github.com/vpayno/python-template/actions/workflows/python.yaml)]
+ [![python-dependency-update](https://github.com/vpayno/python-template/actions/workflows/python-dependency-update.yaml/badge.svg?branch=main)](https://github.com/vpayno/python-template/actions/workflows/python-dependency-update.yaml)]
 
 My Python repo template.
