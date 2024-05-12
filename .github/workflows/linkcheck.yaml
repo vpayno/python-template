@@ -1,0 +1,28 @@
+---
+#
+# .github/workflows/linkcheck.yaml
+#
+name: linkcheck
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  linkChecker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@v1
+        with:
+          fail: false
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
