@@ -7,6 +7,7 @@
  [![markdown](https://github.com/vpayno/python-template/actions/workflows/markdown.yaml/badge.svg?branch=main)](https://github.com/vpayno/python-template/actions/workflows/markdown.yaml)]
  [![proselint](https://github.com/vpayno/python-template/actions/workflows/proselint.yaml/badge.svg?branch=main)](https://github.com/vpayno/python-template/actions/workflows/proselint.yaml)]
  [![spellcheck](https://github.com/vpayno/python-template/actions/workflows/spellcheck.yaml/badge.svg?branch=main)](https://github.com/vpayno/python-template/actions/workflows/spellcheck.yaml)]
+ [![woke](https://github.com/vpayno/python-template/actions/workflows/woke.yaml/badge.svg?branch=main)](https://github.com/vpayno/python-template/actions/workflows/woke.yaml)]
  [![yaml](https://github.com/vpayno/python-template/actions/workflows/yaml.yaml/badge.svg?branch=main)](https://github.com/vpayno/python-template/actions/workflows/yaml.yaml)]
 
 My Python repo template.
