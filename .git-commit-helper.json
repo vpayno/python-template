@@ -1,0 +1,21 @@
+{
+    "helpers": {
+        "commit": {
+            "types": [
+                "build",
+                "chore",
+                "ci",
+                "doc",
+                "feat",
+                "fix",
+                "perf",
+                "refactor",
+                "release",
+                "revert",
+                "security",
+                "style",
+                "test"
+            ]
+        }
+    }
+}
