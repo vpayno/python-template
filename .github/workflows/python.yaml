@@ -1,0 +1,191 @@
+---
+#
+# .github/workflows/python.yaml
+#
+# yamllint disable rule:line-length
+name: python
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        exclude:
+          - os: "macos-latest"
+            python-version: "3.12"
+          - os: "windows-latest"
+            python-version: "3.12"
+    runs-on: "${{ matrix.os }}"
+    env:
+      PYTHONPATH: "src"
+    steps:
+      - name: Checkout Repo (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: checkout-repo
+        uses: actions/checkout@v4
+      - name: Set up Python (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Setup Env (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: setup-env
+        run: |
+          [[ -d ./src ]] && PY_SRC_DIR="src"
+          if [[ -d ./tests ]]; then
+            PY_TEST_DIR="tests"
+          else
+            PY_TEST_DIR="src/tests"
+          fi
+          printf "%s=%s\n" "PY_SRC_DIR" "${PY_SRC_DIR}" | tee -a "${GITHUB_ENV}"
+          printf "%s=%s\n" "PY_TEST_DIR" "${PY_TEST_DIR}" | tee -a "${GITHUB_ENV}"
+      - name: Update pip (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: update-pip
+        run: |
+          python -m pip install --upgrade pip
+          pip --version
+      - name: Update PDM (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: update-pdm
+        run: |
+          pip install --upgrade pdm
+          pdm --version
+      - name: Check file existence - pdm.lock (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: check_file_pdm_lock
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "pdm.lock"
+      - name: Setup PDM (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: setup-pdm
+        run: |
+          python --version
+          pdm use "$(which python)"
+          pdm sync
+      - name: Versions (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: show-versions
+        run: |
+          {
+            printf "### Versions\n\n"
+            printf '```\n'
+            tail -v src/helloworld/_version.py
+            printf "\n"
+            python --version
+            printf "\n"
+            pdm --version
+            printf "\n"
+            pdm run python --version
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Analysing the code with pylint (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: pylint
+        run: |
+          {
+            printf "### pylint\n\n"
+            printf '```\n'
+            pdm run pylint "${PY_SRC_DIR}"
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Analysing the code with ruff (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: ruff
+        run: |
+          {
+            printf "### ruff\n\n"
+            printf '```\n'
+            pdm run ruff check "${PY_SRC_DIR}" "${PY_TEST_DIR}"
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Analysing the code using mypy (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: mypy
+        run: |
+          {
+            printf "### mypy\n\n"
+            printf '```\n'
+            pdm run mypy --install-types --non-interactive --show-error-context --show-column-numbers --show-error-codes --strict-equality --no-implicit-optional --check-untyped-defs --warn-return-any --disallow-untyped-calls --disallow-untyped-defs --check-untyped-defs --disallow-untyped-decorators "${PY_SRC_DIR}"
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Analysing the code using refurb (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: refurb
+        run: |
+          {
+            printf "### refurb\n\n"
+            printf '```\n'
+            pdm run refurb "${PY_SRC_DIR}" || true
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Analyzing the code using pyright (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: pyright
+        run: |
+          {
+            printf "### pyright\n\n"
+            printf '```\n'
+            pdm run pyright --stats "${PY_SRC_DIR}"
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Analyzing the code using bandit (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        run: |
+          {
+            printf "### bandit\n\n"
+            printf '```\n'
+            pdm run bandit --verbose --recursive --exclude ./tests ./src
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Analysing the code using perflint (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: perflint
+        continue-on-error: true
+        run: |
+          {
+            printf "### perflint\n\n"
+            printf '```\n'
+            pdm run perflint "${PY_SRC_DIR}"
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Analyzing the code using safety (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: safety-check
+        continue-on-error: true
+        run: |
+          {
+            printf "### Security Scan\n\n"
+            printf '```\n'
+            pdm run safety check --full-report
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Check for outdated dependencies (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: outdated-check
+        continue-on-error: true
+        run: |
+          {
+            printf "### Outdated Dependencies\n\n"
+            printf '```\n'
+            pdm outdated
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+      - name: Testing with pytest (os:${{ matrix.os }} python:${{ matrix.python-version }})
+        id: pytest
+        run: |-
+          {
+            printf "### PyTest with Coverage\n\n"
+            printf '```\n'
+            pdm run pytest --verbose --cov-report term --cov=src --cov-branch --cov-report=term-missing --cov-report=xml:.coverage.xml
+            printf '```\n'
+            printf "\n"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
