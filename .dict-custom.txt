@@ -2,6 +2,7 @@ GitHub
 GitLab
 MERCHANTABILITY
 NONINFRINGEMENT
+actionlint
 aspell
 awk
 cli
