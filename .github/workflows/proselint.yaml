@@ -1,0 +1,97 @@
+---
+#
+# .github/workflows/proselint.yaml
+#
+name: proselint
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  stage1:
+    name: Change Check
+    runs-on: ubuntu-latest
+    outputs:
+      docs_changed: ${{ steps.check_file_changed.outputs.docs_changed }}
+    steps:
+      - name: Checkout Repo
+        id: checkout-repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+          submodules: recursive
+      - name: Get Change List
+        id: check_file_changed
+        run: |-
+          # Diff HEAD with the previous commit then output to stdout.
+          {
+            printf "=== Which files changed? ===\n"
+            GIT_DIFF="$(git diff --name-only HEAD^ HEAD)"
+            printf "%s\n" "${GIT_DIFF}"
+            printf "\n"
+
+            # Check if the files are present in the changed file list (added, modified, deleted) then output to stdout.
+            HAS_DIFF=false
+            printf "=== Which text files changed? ===\n"
+            if printf "%s\n" "${GIT_DIFF}" | grep -E '^.*[.](md|txt)$'; then
+              HAS_DIFF=true
+            fi
+            printf "\n"
+
+            # Did files change?
+            printf "=== Did text files change? ===\n"
+            printf "%s\n" "${HAS_DIFF}"
+            printf "\n"
+
+            # Set the output named "docs_changed"
+            printf "%s=%s\n" "docs_changed" "${HAS_DIFF}" | tee -a "${GITHUB_OUTPUT}"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+  stage2:
+    name: ProseLint Checks
+    strategy:
+      matrix:
+        python-version: ['3.12']
+        os: ['ubuntu-latest']
+    runs-on: ${{ matrix.os }}
+    needs: [stage1]
+    if: needs.stage1.outputs.docs_changed == 'True'
+    steps:
+      - name: Checkout Repo [Python ${{ matrix.python-version }}]
+        id: checkout-repo
+        uses: actions/checkout@v4
+      - name: Set up Reviewdog [Python ${{ matrix.python-version }}]
+        id: setup-reviewdog
+        uses: reviewdog/action-setup@v1
+      - name: Set up Python [Python ${{ matrix.python-version }}]
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Show Python version [Python ${{ matrix.python-version }}]
+        id: python-version
+        run: |-
+          python --version
+      - name: Install Python Tools [Python ${{ matrix.python-version }}]
+        id: install-python-tools
+        run: |-
+          pip install --upgrade pip
+          pip install --upgrade proselint
+      - name: Run Proselint [Python ${{ matrix.python-version }}]
+        id: proselint
+        run: |-
+          {
+            tee /tmp/reviewdog-input.txt < <(proselint ./*md)
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+          reviewdog -efm="%f:%l:%c: %m" -name="proselint" -reporter=github-check < /tmp/reviewdog-input.txt
