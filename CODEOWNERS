@@ -1,0 +1,27 @@
+.github             @vpayno
+.gitlab-ci.yaml     @vpayno
+
+CHANGELOG.md        @vpayno
+CODEOWNERS          @vpayno
+LICENSE*            @vpayno
+README.md           @vpayno
+
+.bandit.yaml            @vpayno
+cliff.toml              @vpayno
+.commitlint.config.mjs  @vpayno
+.dict-custom.txt        @vpayno
+.editorconfig           @vpayno
+.git-commit-helper.js   @vpayno
+.gitignore              @vpayno
+.gitlint                @vpayno
+.lycheeignore           @vpayno
+.markdownlint.json      @vpayno
+.proselintrc.json       @vpayno
+.pyspelling.yaml        @vpayno
+.ruff.toml              @vpayno
+.woke.yaml              @vpayno
+.wokeignore             @vpayno
+.yamllint.yaml          @vpayno
+
+pyproject.toml          @vpayno
+pdm.lock                @vpayno
